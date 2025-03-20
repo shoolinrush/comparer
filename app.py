@@ -58,9 +58,17 @@ def process_file(file_obj):
     else:
         df = pd.read_excel(file_obj, dtype=str, header=hdr)
 
-    df.columns = df.columns.str.strip().str.upper().str.replace(r"[^\w\s]", "", regex=True).str.strip()
+    df.columns = (
+        df.columns
+        .str.strip()
+        .str.upper()
+        .str.replace(r"[^\w\s#]", "", regex=True)  # Retain `#` in column names
+        .str.strip()
+    )
     
-    key_column = next((col for col in df.columns if "ISBN13" in col.replace(" ", "") or "EAN" in col.replace(" ", "")), None)
+    # Enhanced key column detection for both `ISBN13` and `EAN #`
+    key_column = next((col for col in df.columns if "ISBN13" in col.replace(" ", "") or "EAN#" in col.replace(" ", "") or "EAN #" in col.strip()), None)
+
     if not key_column:
         raise KeyError("No ISBN/EAN column found.")
     
@@ -71,6 +79,7 @@ def process_file(file_obj):
         df[stock_column] = pd.to_numeric(df[stock_column], errors="coerce")
 
     return df, key_column
+
 
 def extract_isbns(file_obj):
     try:
