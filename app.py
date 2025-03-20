@@ -88,9 +88,14 @@ def clean_file(file_obj, cur, rem_obj=None):
     if rem_obj:
         remove_set = extract_isbns(rem_obj)
         df = df[~df[key_column].isin(remove_set)]
-    
+
+    # Filter out rows with STOCK or QTYAV equal to zero
+    stock_column = next((col for col in df.columns if "STOCK" in col.replace(" ", "") or "QTYAV" in col.replace(" ", "")), None)
+    if stock_column:
+        df = df[df[stock_column].fillna(0).astype(float) != 0]
+
     df = df[[x for x in required_columns if x in df.columns]]
-    
+
     if "CUR" not in df.columns:
         df["CUR"] = ""
     df["CUR"] = cur
@@ -98,6 +103,7 @@ def clean_file(file_obj, cur, rem_obj=None):
     df = df.reindex(columns=required_columns, fill_value="")
 
     return df
+
 
 def to_excel_bytes(df):
     output = io.BytesIO()
